@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Department;
 use Illuminate\Http\Request;
 
 class DepartmentController extends Controller
@@ -12,6 +13,8 @@ class DepartmentController extends Controller
     public function index()
     {
         //
+        $departments = Department::all();
+        return view('frontend.departments.index', compact('departments'));
     }
 
     /**
@@ -20,6 +23,7 @@ class DepartmentController extends Controller
     public function create()
     {
         //
+        return view('frontend.departments.create');
     }
 
     /**
@@ -27,7 +31,18 @@ class DepartmentController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        // Validate the incoming request data
+        $request->validate([
+            'name' => 'required|max:255',
+            'status' => 'required|in:active,inactive',
+        ]);
+
+        // Create a new Department record
+        Department::create($request->all());
+
+        // Redirect to the index page with a success message
+        return redirect()->route('departments.index')
+            ->with('success', 'Department created successfully.');
     }
 
     /**
@@ -36,6 +51,8 @@ class DepartmentController extends Controller
     public function show(string $id)
     {
         //
+        $department = Department::find($id);
+        return view('frontend.departments.show', compact('department'));
     }
 
     /**
@@ -44,6 +61,8 @@ class DepartmentController extends Controller
     public function edit(string $id)
     {
         //
+        $department = Department::find($id);
+        return view('frontend.departments.edit', compact('department'));
     }
 
     /**
@@ -51,7 +70,18 @@ class DepartmentController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $request->validate([
+            'name' => 'required|max:255',
+            'status' => 'required|in:active,inactive',
+        ]);
+    
+        $department = Department::find($id);
+
+    
+        $department->update($request->all());
+    
+        return redirect()->route('departments.index')
+            ->with('success', 'Department updated successfully.');
     }
 
     /**
@@ -59,6 +89,16 @@ class DepartmentController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        $department = Department::find($id);
+
+        if (!$department) {
+            return redirect()->route('departments.index')
+                ->with('error', 'Department not found.');
+        }
+    
+        $department->delete();
+    
+        return redirect()->route('departments.index')
+            ->with('success', 'Department deleted successfully.');
     }
 }
