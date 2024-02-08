@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use App\Models\Employee;
 use Illuminate\Http\Request;
 
@@ -12,8 +13,11 @@ class EmployeeController extends Controller
      */
     public function index()
     {
-        //
-        $employees = Employee::all();
+        if (auth()->user()->isSuperAdmin()) {
+            $employees = Employee::all();
+        } else {
+            $employees = Employee::where('id', auth()->id())->get();
+        }
         return view('frontend.employees.index', compact('employees'));
     }
 
@@ -50,7 +54,19 @@ class EmployeeController extends Controller
         }
 
         // Create a new employee record
-        Employee::create($request->all());
+        $employee = Employee::create($request->all());
+
+        // Create a user for the employee
+        $user = User::create([
+            'name' => $request->input('first_name') . ' ' . $request->input('last_name'),
+            'email' => $request->input('email'),
+            'password' => bcrypt('default_password'), // You should set a default password or send a notification for setting the password
+        ]);
+
+        // Associate the user with the employee
+        $employee->user()->associate($user);
+        $employee->save();
+
 
         // Redirect to the index page with a success message
         return redirect()->route('employees.index')
@@ -70,29 +86,32 @@ class EmployeeController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    public function edit(Employee $employee)
     {
-        //
-        $employee = Employee::find($id);
-        return view('frontend.employees.edit', compact('employee'));
+        if (auth()->user()->isSuperAdmin() || auth()->id() === $employee->id) {
+            return view('frontend.employees.edit', compact('employee'));
+        } else {
+            abort(403, 'Unauthorized action.');
+        }
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, Employee $employee)
     {
+        if (auth()->user()->isSuperAdmin() || auth()->id() === $employee->id) {
         $request->validate([
             'first_name' => 'required|max:255',
             'last_name' => 'required|max:255',
-            'email' => 'required|email|unique:employees,email,' . $id,
+            'email' => 'required|email|unique:employees,email,' . $employee->id,
             'phone' => 'nullable|numeric',
             'profile_image' => 'nullable|file|mimes:jpeg,png,jpg,gif|max:2048',
             'status' => 'required|in:active,inactive',
             'department' => 'nullable',
         ]);
     
-        $employee = Employee::find($id);
+        $employee = Employee::find($employee->id);
     
         if ($request->hasFile('profile_image')) {
             $file = $request->file('profile_image');
@@ -105,6 +124,9 @@ class EmployeeController extends Controller
     
         return redirect()->route('employees.index')
             ->with('success', 'Employee updated successfully.');
+        } else {
+            abort(403, 'Unauthorized action.');
+        }
     }
 
     /**
