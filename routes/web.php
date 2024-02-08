@@ -24,6 +24,8 @@ Route::get('/', function () {
 Auth::routes();
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
-
-Route::resource('departments', DepartmentController::class);
 Route::resource('employees', EmployeeController::class);
+
+Route::middleware(['web', 'superadmin'])->group(function () {
+    Route::resource('departments', DepartmentController::class);
+});
