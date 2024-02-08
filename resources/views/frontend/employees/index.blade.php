@@ -1,11 +1,13 @@
 @extends('layouts.app')
 @section('content')
   <div class="container mt-5">
+    @if(Auth::user()->name === 'super_admin')
     <div class="justify-end ">
       <div class="col ">
         <a class="btn btn-sm btn-success" href={{ route('employees.create') }}>Add Employee</a>
       </div>
     </div>
+    @endif
     <table id="employeeTable" class="table">
       <thead>
         <tr>
