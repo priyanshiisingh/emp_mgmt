@@ -36,7 +36,7 @@
 
   <script>
     $(document).ready(function () {
-      $('#departmentTable').DataTable();
+      new DataTable('#departmentTable');
     });
   </script>
 @endsection

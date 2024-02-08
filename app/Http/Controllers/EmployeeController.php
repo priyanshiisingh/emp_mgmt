@@ -27,7 +27,11 @@ class EmployeeController extends Controller
     public function create()
     {
         //
+        if (auth()->user()->isSuperAdmin()) {
         return view('frontend.employees.create');
+        }else {
+            abort(403, 'Unauthorized action.');
+        }
     }
 
     /**
