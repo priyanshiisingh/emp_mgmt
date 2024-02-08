@@ -25,7 +25,7 @@ return new class extends Migration
             $table->string('modified_by')->nullable();
 
             // Department with multiple assignment options
-            $table->json('department')->nullable();
+            $table->text('department')->nullable()->collation('utf8mb4_unicode_ci');
             // $table->timestamps();
         });
     }

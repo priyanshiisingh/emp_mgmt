@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Employee;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class EmployeeController extends Controller
 {
@@ -13,7 +14,11 @@ class EmployeeController extends Controller
      */
     public function index()
     {
-        if (auth()->user()->isSuperAdmin()) {
+
+        $user = Auth::user();
+
+        // Fetch employees based on the user's role
+        if ($user->name === 'super_admin') {
             $employees = Employee::all();
         } else {
             $employees = Employee::where('id', auth()->id())->get();
@@ -26,8 +31,10 @@ class EmployeeController extends Controller
      */
     public function create()
     {
-        //
-        if (auth()->user()->isSuperAdmin()) {
+        $user = Auth::user();
+
+        // Fetch employees based on the user's role
+        if ($user->name === 'super_admin') {
         return view('frontend.employees.create');
         }else {
             abort(403, 'Unauthorized action.');
@@ -92,7 +99,9 @@ class EmployeeController extends Controller
      */
     public function edit(Employee $employee)
     {
-        if (auth()->user()->isSuperAdmin() || auth()->id() === $employee->id) {
+        $user = Auth::user();
+
+        if ($user->name === 'super_admin' || auth()->id() === $employee->id) {
             return view('frontend.employees.edit', compact('employee'));
         } else {
             abort(403, 'Unauthorized action.');
@@ -104,7 +113,9 @@ class EmployeeController extends Controller
      */
     public function update(Request $request, Employee $employee)
     {
-        if (auth()->user()->isSuperAdmin() || auth()->id() === $employee->id) {
+        $user = Auth::user();
+
+        if ($user->name === 'super_admin' || auth()->id() === $employee->id) {
         $request->validate([
             'first_name' => 'required|max:255',
             'last_name' => 'required|max:255',
@@ -116,6 +127,14 @@ class EmployeeController extends Controller
         ]);
     
         $employee = Employee::find($employee->id);
+
+        // Update the corresponding user's name and email
+        if ($employee->user) {
+            $employee->user->update([
+                'name' => $request->input('first_name') . ' ' . $request->input('last_name'),
+                'email' => $request->input('email'),
+            ]);
+        }
     
         if ($request->hasFile('profile_image')) {
             $file = $request->file('profile_image');
@@ -136,18 +155,29 @@ class EmployeeController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Request $request, Employee $employee)
     {
-        $employee = Employee::find($id);
+        $user = Auth::user();
+        
+        if ($user->name === 'super_admin' || auth()->id() === $employee->id) {
+            $employee = Employee::find($employee->id);
 
-        if (!$employee) {
+            if (!$employee) {
+                return redirect()->route('employees.index')
+                    ->with('error', 'Employee not found.');
+            }
+
+            // Delete the connected user
+            if ($employee->user) {
+                $employee->user->delete();
+            }
+        
+            $employee->delete();
+        
             return redirect()->route('employees.index')
-                ->with('error', 'Employee not found.');
+                ->with('success', 'Employee and connected user deleted successfully.');
+        } else {
+            abort(403, 'Unauthorized action.');
         }
-    
-        $employee->delete();
-    
-        return redirect()->route('employees.index')
-            ->with('success', 'Employee deleted successfully.');
     }
 }

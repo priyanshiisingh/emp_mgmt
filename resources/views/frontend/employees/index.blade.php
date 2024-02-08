@@ -11,7 +11,9 @@
         <tr>
           <th>Name</th>
           <th>Email</th>
-          <th>Action</th>
+          @if(Auth::user()->name === 'super_admin')
+            <th>Action</th>
+          @endif
         </tr>
       </thead>
       <tbody>
@@ -19,15 +21,18 @@
           <tr>
             <td>{{ $employee->first_name }}</td>
             <td>{{ $employee->email }}</td>
-            <td>
-              <a href="{{ route('employees.edit', $employee->id) }}" class="btn btn-primary btn-sm">Edit</a>
-              <a href="{{ route('employees.show', $employee->id) }}" class="btn btn-info btn-sm">Show</a>
-              <form action="{{ route('employees.destroy', $employee->id) }}" method="post" style="display:inline;">
-                @csrf
-                @method('DELETE')
-                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-              </form>
-            </td>
+              @if(Auth::user()->name === 'super_admin')
+              <td>
+                <a href="{{ route('employees.edit', $employee->id) }}" class="btn btn-primary btn-sm">Edit</a>
+                <a href="{{ route('employees.show', $employee->id) }}" class="btn btn-info btn-sm">Show</a>
+                <form action="{{ route('employees.destroy', $employee->id) }}" method="post" style="display:inline;">
+                  @csrf
+                  @method('DELETE')
+                  <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                </form>
+              </td>
+              @endif
+
           </tr>
         @endforeach
       </tbody>
